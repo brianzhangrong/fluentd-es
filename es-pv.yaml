@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: es-data-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+   - ReadWriteOnce
+  storageClassName: nfs
+  nfs:
+    server: 10.206.0.5
+    path: /data/k8s
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: es-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: "nfs"
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: es-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: single-es
+  template:
+    metadata:
+      labels:
+        app: single-es
+    spec:
+      initContainers:
+      - name: init-sysctl
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      containers:
+      - name: single-es
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
+        ports:
+          - containerPort: 9200
+            name: http
+          - containerPort: 9300
+            name: transport
+        env:
+          - name: discovery.type
+            value: single-node
+        volumeMounts:
+          - mountPath: /usr/share/elasticsearch/data
+            name: es-data
+      volumes:
+        - name: es-data
+          persistentVolumeClaim:
+            claimName: es-data-pvc 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: single-es-svc
+spec:
+  selector:
+    app: single-es
+  type: NodePort
+  ports:
+  - name: http
+    port: 9200
+    targetPort: 9200
+    nodePort: 30092
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+      - name: kibana
+        image: docker.elastic.co/kibana/kibana-oss:7.2.0
+        ports:
+        - name: http
+          containerPort: 5601
+        env:
+        - name: ELASTICSEARCH_HOSTS
+          value: http://single-es-svc:9200
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana-svc
+spec:
+  selector:
+    app: kibana
+  type: NodePort
+  ports:
+  - name: http
+    port: 5601
+    targetPort: 5601
+    nodePort: 30561
