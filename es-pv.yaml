@@ -101,6 +101,18 @@ spec:
         env:
         - name: ELASTICSEARCH_HOSTS
           value: http://single-es-svc:9200
+        livenessProbe:
+          httpGet:
+            path: /api/status
+            port: 5601
+          initialDelaySeconds: 5
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/status
+            port: 5601
+          initialDelaySeconds: 5
+          timeoutSeconds: 10
 ---
 apiVersion: v1
 kind: Service
