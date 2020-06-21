@@ -93,16 +93,16 @@ spec:
         - containerPort: 24231
           name: prometheus
           protocol: TCP
-        livenessProbe:
-          tcpSocket:
-            port: prometheus
-          initialDelaySeconds: 15
-          timeoutSeconds: 30
-        readinessProbe:
-          tcpSocket:
-            port: prometheus
-          initialDelaySeconds: 15
-          timeoutSeconds: 30
+        #livenessProbe:
+        #  tcpSocket:
+        #    port: prometheus
+        #  initialDelaySeconds: 15
+        #  timeoutSeconds: 30
+        #readinessProbe:
+        #  tcpSocket:
+        #    port: prometheus
+        #  initialDelaySeconds: 15
+        #  timeoutSeconds: 30
       terminationGracePeriodSeconds: 30
       volumes:
       - name: varlog

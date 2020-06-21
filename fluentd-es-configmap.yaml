@@ -130,6 +130,17 @@ data:
       </parse>
     </source>
 
+    <source>
+      @id linkis-gateway.log
+      @type tail
+      path /var/log/linkis-gateway.log
+      pos_file /var/log/linkis-gateway.log.pos
+      tag linkis-gateway
+      <parse>
+       @type none
+      </parse>
+    </source>
+
     # Detect exceptions in the log output and forward them as one log entry.
     <match raw.kubernetes.**>
       @id raw.kubernetes
@@ -143,13 +154,14 @@ data:
     </match>
 
     # Concatenate multi-line logs
-    <filter **>
-      @id filter_concat
-      @type concat
-      key message
-      multiline_end_regexp /\n$/
-      separator ""
-    </filter>
+    #<filter **>
+    #  @id filter_concat
+    #  @type concat
+    #  key message
+    #  flush_interval 50
+    #  multiline_end_regexp /\n$/
+    #  separator ""
+    #</filter>
 
     # Enriches records with Kubernetes metadata
     <filter kubernetes.**>
@@ -334,19 +346,6 @@ data:
       tag cluster-autoscaler
     </source>
 
-    <source>
-      @id linkis-gateway.log
-      @type tail
-      format multiline
-      multiline_flush_interval 5s
-      format_firstline /^\w\d{4}/
-      format1 /^(?<severity>\w)(?<time>\d{4} [^\s]*)\s+(?<pid>\d+)\s+(?<source>[^ \]]+)\] (?<message>.*)/
-      time_format %m%d %H:%M:%S.%N
-      path /var/log/linkis-gateway.log
-      pos_file /var/log/linkis-gateway.log.pos
-      tag linkis-gateway
-    </source>
-
     # Logs from systemd-journal for interesting services.
     # TODO(random-liu): Remove this after cri container runtime rolls out.
     <source>
@@ -481,7 +480,7 @@ data:
         flush_mode interval
         retry_type exponential_backoff
         flush_thread_count 2
-        flush_interval 5s
+        flush_interval 20s
         retry_forever
         retry_max_interval 30
         chunk_limit_size 2M
